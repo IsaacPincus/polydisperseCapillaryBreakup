@@ -1,0 +1,16 @@
+Parameter,Value,Units,description
+C,144,,intertial constant
+rho,985,kg/m^3,fluid density
+eta_s,0.059,Pa.s,solvent viscosity
+X,1,,filament shape factor
+chi,0.031,N/m,fluid surface tension
+U_{\tau \eta},2.36,,universal polymer constant
+T,298,K,temperature
+K,0.08,cm^3/g,Mark-Houwink constant
+alpha,3 nu - 1,,Mark-Houwink exponent
+nu,0.5,,excluded volume exponent
+h^*,0.26,,chain hydrodynamic interaction parameter
+l,0.154,nm,carbon-carbon bond length
+M_o,104,g/mol,styrene monomer molecular weight
+C_infty,9.7,,characteristic ratio
+a_0,6.2,mm,initial filament radius
