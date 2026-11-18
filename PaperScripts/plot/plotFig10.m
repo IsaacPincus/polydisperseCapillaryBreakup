@@ -32,6 +32,6 @@ set(h7, 'HandleVisibility', 'on', ...   % one legend entry for PS7
     'DisplayName', sprintf('PS7, $c_\\mathrm{PS7} = %g$ [wppm]', r.cPS7));
 set(ax, 'XScale', 'log', 'YScale', 'log', 'XMinorTick', 'on')
 xlabel('$V_0$ [mm/s]')
-ylabel('$\Delta \sigma_{p,i}/(V_0/L_\mathrm{end})$ at end of pre-stretch [Pa s]')
+ylabel('$\Delta \sigma_{p,i}/(3V_0/(2L_\mathrm{end}))$ at end of pre-stretch [Pa s]')
 legend('Location', 'best')
 end
