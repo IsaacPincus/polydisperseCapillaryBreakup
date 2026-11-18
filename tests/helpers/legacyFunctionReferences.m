@@ -264,7 +264,9 @@ cases.experimentalRelaxationTime = io(struct('t16', t16(:,1), 'D16', D16(:,1), '
     'D7', D7, 'tMix', tMix(:,3), 'DMix', DMix(:,3)), outs);
 
 % --- plateRetraction (from Fig9_FastRetraction_CDD.m) ----------------------------
-zeta0 = 0.5; xi0 = 1; R0 = 3e-3; L0 = 1e-3; Lend = 1.3e-3; V0 = 0.5e-3;
+% R0 = L0 (aspect ratio 1): the original's 1/Lam0^2 misprint (Spiegelberg et
+% al. Eq. 25) has no effect there, so the original and Eq. B10 agree
+zeta0 = 0.5; xi0 = 1; R0 = 1e-3; L0 = 1e-3; Lend = 1.3e-3; V0 = 0.5e-3;
 Hend = Lend/L0; Lam0 = L0/R0;
 Hfunc = @(t) 1 + t;
 Hderivfunc = @(t) 1;

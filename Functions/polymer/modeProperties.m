@@ -26,7 +26,7 @@ pm.g = modes.n'*modes.molDensity*p.kB*p.T*p.NA;
 pm.Ltrue = 2*p.l*M/p.MW_monomer;
 pm.R0 = sqrt(2*p.l^2.*M/p.MW_monomer*p.cinf);
 pm.L = sqrt(3*((pm.Ltrue'./pm.R0').^2-1));
-pm.Nk = (pm.L.^2 + 1)/3;
+pm.Nk = (pm.L.^2 + 3)/3;
 
 jvals = 1:Ns;
 sigma = -1.40*opt.hstar^0.78;

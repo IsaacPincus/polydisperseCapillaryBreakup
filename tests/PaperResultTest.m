@@ -11,7 +11,7 @@ classdef PaperResultTest < matlab.unittest.TestCase
     properties (TestParameter)
         figureName = struct('Fig1', 'Fig1', 'Fig2', 'Fig2', 'Fig3', 'Fig3', ...
             'Fig4_Fig5', 'Fig4_Fig5', 'Fig6a', 'Fig6a', 'Fig6b', 'Fig6b', ...
-            'Fig7', 'Fig7', 'Fig8', 'Fig8', 'Fig9_Fig10', 'Fig9_Fig10');
+            'Fig7', 'Fig7', 'Fig8', 'Fig8', 'Fig9_Fig10', 'Fig9_Fig10', 'FigB1', 'FigB1');
     end
 
     methods (TestClassSetup)

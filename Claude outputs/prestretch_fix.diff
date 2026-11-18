@@ -1,0 +1,114 @@
+diff -ru a/Functions/thinning/bridgeRadius.m b/Functions/thinning/bridgeRadius.m
+--- a/Functions/thinning/bridgeRadius.m	2026-11-17 13:12:23.230854805 -0500
++++ b/Functions/thinning/bridgeRadius.m	2026-11-17 13:12:36.418076250 -0500
+@@ -1,9 +1,9 @@
+ function R = bridgeRadius(H, geom)
+ %BRIDGERADIUS Neck radius of the liquid bridge at plate gap H (in units of L0).
+ %
+-%   R = bridgeRadius(H, geom) uses the liquid-bridge model of plateRetraction
+-%   with initial aspect ratio Lam0 = L0/R0 (geom fields R0, L0, zeta0, xi0).
+-%   For zeta0 = 0.5 this is R = R0 * H^(-3/(4 Lam0^2)).
++%   R = bridgeRadius(H, geom) is Eq. B9 of the lubrication model used by
++%   plateRetraction (geom fields R0, zeta0, xi0). It does not depend on the
++%   aspect ratio L0/R0. For zeta0 = 0.5 this is R = R0 * H^(-3/4).
+ 
+ z0 = ((geom.zeta0-1)*geom.zeta0)/(1-2*geom.zeta0)^2;
+ R = (geom.xi0*((H/z0 - 4)./(H/z0 - H*4)).^(3/4))*geom.R0;
+diff -ru a/Functions/thinning/plateRetraction.m b/Functions/thinning/plateRetraction.m
+--- a/Functions/thinning/plateRetraction.m	2026-11-17 13:12:23.223674473 -0500
++++ b/Functions/thinning/plateRetraction.m	2026-11-17 13:12:36.417952554 -0500
+@@ -4,8 +4,10 @@
+ %   pull = plateRetraction(pm, V0, geom) integrates the FENE-P modes of pm
+ %   (from modeProperties) while the plates separate at speed V0 [m/s]
+ %   from gap geom.L0 to geom.Lend. The filament strain rate follows the
+-%   liquid-bridge model with initial aspect ratio Lam0 = L0/R0 and
+-%   zeta0, xi0 as in the paper; plate gap H(t) = 1 + t V0/L0 (in units of L0).
++%   lubrication model of Appendix B (Eq. B10) for the material point that
++%   starts at height zeta0; plate gap H(t) = 1 + t V0/L0 (in units of L0).
++%   At the midplane (zeta0 = 0.5) ep = (3/2) (dL/dt)/L, independent of the
++%   aspect ratio L0/R0.
+ %
+ %   geom fields: R0, L0, Lend, zeta0, xi0 (all SI). retractionGapForRadius
+ %   gives the Lend that ends the retraction at a chosen radius.
+@@ -20,7 +22,6 @@
+ %               [Pa], 1-by-Nm (g f sum_s (Azz - Arr))
+ 
+ [Nm, Ns] = size(pm.lambda_ms);
+-Lam0 = geom.L0/geom.R0;
+ Hend = geom.Lend/geom.L0;
+ Hfunc = @(t) 1 + t;
+ Hderivfunc = @(t) 1;
+@@ -30,7 +31,7 @@
+ 
+ options = odeset('RelTol', 1e-6, 'AbsTol', 1e-9);
+ y0 = ones(Nm*Ns*2, 1);
+-sol = ode15s(@(t,y) pullRHS(t, y, pm, Hfunc, Hderivfunc, z0, Lam0, V0, geom.L0), ...
++sol = ode15s(@(t,y) pullRHS(t, y, pm, Hfunc, Hderivfunc, z0, V0, geom.L0), ...
+     [0, pull.tpull], y0, options);
+ points = 1000;
+ y = deval(sol, linspace(0, pull.tpull, points));
+@@ -39,7 +40,7 @@
+ H = Hfunc(pull.tpull*V0/geom.L0);
+ dH = Hderivfunc(pull.tpull*V0/geom.L0);
+ pull.Rpull = bridgeRadius(H, geom);
+-pull.epend = (-3/(2*Lam0^2)*1./(H/(4*z0) - 1).*dH./H)*V0/geom.L0;
++pull.epend = (-3/2*1./(H/(4*z0) - 1).*dH./H)*V0/geom.L0;   % Eq. B10
+ pull.H = H;
+ 
+ [Az, Ar] = unpackConformation(pull.conformation, Nm, Ns);
+@@ -48,10 +49,10 @@
+ pull.stress = (pm.g.*f.*sum(Az-Ar,2))';
+ end
+ 
+-function dydt = pullRHS(t, y, pm, Hfunc, Hderivfunc, z0, Lam0, V0, L0)
++function dydt = pullRHS(t, y, pm, Hfunc, Hderivfunc, z0, V0, L0)
+ H = Hfunc(t*V0/L0);
+ dH = Hderivfunc(t*V0/L0);
+-ep = (-3/(2*Lam0^2)*1./(H/(4*z0) - 1).*dH./H)*V0/L0;
++ep = (-3/2*1./(H/(4*z0) - 1).*dH./H)*V0/L0;   % Eq. B10
+ 
+ [Nm, Ns] = size(pm.lambda_ms);
+ [Az, Ar] = unpackConformation(y, Nm, Ns);
+diff -ru a/Functions/thinning/retractionGapForRadius.m b/Functions/thinning/retractionGapForRadius.m
+--- a/Functions/thinning/retractionGapForRadius.m	2026-11-17 13:12:23.238629344 -0500
++++ b/Functions/thinning/retractionGapForRadius.m	2026-11-17 13:12:36.418107506 -0500
+@@ -5,6 +5,6 @@
+ %   must stop at gap Lend [m] for the filament to start thinning from
+ %   radius a [m]. The result does not depend on the retraction speed.
+ 
+-Lend = fzero(@(L) bridgeRadius(L/geom.L0, geom) - a, geom.L0*[1, 10]);
++Lend = fzero(@(L) bridgeRadius(L/geom.L0, geom) - a, geom.L0*[1, 1e3]);
+ end
+ 
+diff -ru a/trials/Fig3PreStretch.m b/trials/Fig3PreStretch.m
+--- a/trials/Fig3PreStretch.m	2026-11-17 13:12:23.253680736 -0500
++++ b/trials/Fig3PreStretch.m	2026-11-17 13:12:36.418291045 -0500
+@@ -31,12 +31,11 @@
+ 
+ % pre-stretch: polymer state at the end, and radius and strain rate during it
+ pull = plateRetraction(r.pm, V0, geom);
+-Lam0 = geom.L0/geom.R0;
+ z0 = ((geom.zeta0-1)*geom.zeta0)/(1-2*geom.zeta0)^2;
+ pull.t = linspace(0, pull.tpull, 400)';
+ H = 1 + pull.t*V0/geom.L0;
+ pull.a = bridgeRadius(H, geom);
+-pull.ep = (-3/(2*Lam0^2)*1./(H/(4*z0) - 1)./H)*V0/geom.L0;   % as in plateRetraction
++pull.ep = (-3/2*1./(H/(4*z0) - 1)./H)*V0/geom.L0;   % Eq. B10, as in plateRetraction
+ 
+ % thinning from the pre-stretched state
+ p.a0 = pull.Rpull;
+diff -ru a/trials/pullHistory.m b/trials/pullHistory.m
+--- a/trials/pullHistory.m	2026-11-17 13:12:23.245865700 -0500
++++ b/trials/pullHistory.m	2026-11-17 13:12:36.418193836 -0500
+@@ -19,10 +19,9 @@
+     points = 400;
+ end
+ [Nm, Ns] = size(pm.lambda_ms);
+-Lam0 = geom.L0/geom.R0;
+ z0 = ((geom.zeta0-1)*geom.zeta0)/(1-2*geom.zeta0)^2;
+ H = @(t) 1 + t*V0/geom.L0;
+-strainRate = @(t) (-3/(2*Lam0^2)*1./(H(t)/(4*z0) - 1)./H(t))*V0/geom.L0;   % dH/dt = V0/L0
++strainRate = @(t) (-3/2*1./(H(t)/(4*z0) - 1)./H(t))*V0/geom.L0;   % Eq. B10, dH/dt = V0/L0
+ cdd = strcmp(drag, 'conformationDependent');
+ 
+ pull.tpull = (geom.Lend - geom.L0)/V0;

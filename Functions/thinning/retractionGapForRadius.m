@@ -5,5 +5,6 @@ function Lend = retractionGapForRadius(a, geom)
 %   must stop at gap Lend [m] for the filament to start thinning from
 %   radius a [m]. The result does not depend on the retraction speed.
 
-Lend = fzero(@(L) bridgeRadius(L/geom.L0, geom) - a, geom.L0*[1, 10]);
+Lend = fzero(@(L) bridgeRadius(L/geom.L0, geom) - a, geom.L0*[1, 1e3]);
 end
+

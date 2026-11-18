@@ -1,0 +1,116 @@
+--- a/solveFilamentThinning.m	2026-11-17 13:42:08.406655371 -0500
++++ b/solveFilamentThinning.m	2026-11-17 13:42:08.477523281 -0500
+@@ -7,7 +7,9 @@
+ %   components Az, Ar of every mode, with the strain rate ep found at each
+ %   instant from the stress balance
+ %       rho a^2 ep^2/8 + sum(g f (Az - Ar)) + 3 eta_s ep = (2X-1) chi/a,
+-%   until a/a0 falls to p.cutoff or t reaches p.tmax.
++%   until a/a0 falls to p.cutoff or t reaches p.tmax. The balance is a
++%   quadratic in ep and is solved in closed form (strainRate); of its two
++%   roots, the one that tends to the inertialess solution is used.
+ %
+ %   Inputs
+ %     p      parameters: chi, X, eta_s, rho, a0, cutoff, tmax (and hsk,
+@@ -22,8 +24,8 @@
+ %     'InitialConformation' state vector of length 2*Nm*Ns ordered
+ %                          [Az(1,1) Ar(1,1) Az(1,2) Ar(1,2) ... Az(Nm,Ns) Ar(Nm,Ns)]
+ %                          (default: all ones, i.e. equilibrium)
+-%     'InitialStrainRate'  initial guess for ep at t = 0
+-%                          (default: sqrt(8 chi/(a0^3 rho)))
++%     'InitialStrainRate'  ignored (kept so old calls still run): ep is
++%                          now found in closed form, without a guess
+ %
+ %   Output fields
+ %     t, a        time and radius (column vectors)
+@@ -53,6 +55,7 @@
+ c.L2 = modes.L.^2;
+ c.trace0 = 3*Ns;   % sum of tr(A_s) at equilibrium, Eq. 22
+ c.g = modes.g;
++c.pCap = (2*p.X-1)*p.chi;   % capillary pressure times a
+ c.lambda = modes.lambda_ms;
+ switch opt.Drag
+     case 'constant'
+@@ -65,12 +68,6 @@
+     otherwise
+         error('solveFilamentThinning:drag', 'Unknown Drag "%s".', opt.Drag);
+ end
+-if isempty(opt.InitialStrainRate)
+-    c.epReset = sqrt(8*c.chi/(c.a0^3*c.rho));
+-else
+-    c.epReset = opt.InitialStrainRate;
+-end
+-
+ y0 = [c.a0; opt.InitialConformation(:)];
+ options = odeset('Events', @(t,y) radiusDecayed(t, y, c.a0, p.cutoff), ...
+     'RelTol', 1e-6, 'AbsTol', 1e-9);
+@@ -84,7 +81,6 @@
+ 
+ % -------------------------------------------------------------------------
+ function dydt = thinningRHS(~, y, c)
+-persistent epGuess
+ a = y(1);
+ [Az, Ar] = unpackConformation(y(2:end), c.Nm, c.Ns);
+ 
+@@ -95,13 +91,8 @@
+     zet = ones(c.Nm, c.Ns);
+ end
+ 
+-% fzero is seeded with the previous strain rate; reset at the start of a run
+-if a == c.a0
+-    epGuess = c.epReset;
+-end
+ P = sum(c.g.*f.*sum(Az-Ar,2));   % Eq. 27
+-ep = fzero(@(ep) stressBalance(ep, a, P, c), epGuess);
+-epGuess = ep;
++ep = strainRate(a, P, c);
+ 
+ adot = -0.5*ep*a;
+ Azdot = 2*ep*Az - f./(c.lambda.*zet).*(Az-1);
+@@ -120,15 +111,7 @@
+ f = L2'./(L2'+c.trace0-sum(Az+2*Ar,3));
+ stress = c.g'.*f.*sum(Az-Ar,3);
+ 
+-ep = zeros(size(t));
+-guess = sqrt(8*c.chi/(a(1)^3*c.rho));
+-for tt = 1:lent
+-    Azt = reshape(Az(tt,:,:), c.Nm, c.Ns);
+-    Art = reshape(Ar(tt,:,:), c.Nm, c.Ns);
+-    P = sum(c.g.*feneFactor(Azt, Art, c).*sum(Azt-Art,2));
+-    ep(tt) = fzero(@(ep) stressBalance(ep, a(tt), P, c), guess);
+-    guess = ep(tt);
+-end
++ep = strainRate(a, sum(stress, 2), c);
+ 
+ Wi = c.lambda(:,1).*ep';
+ if c.cdd
+@@ -151,10 +134,26 @@
+ f = c.L2./(c.L2+c.trace0-sum(Az+2*Ar,2));
+ end
+ 
+-function bal = stressBalance(ep, a, P, c)
+-% Eq. 8 with c.rho = C*rho*8 (see inertialDensity)
+-bal = 1/8*ep^2*a^2*c.rho + P ...
+-    + 3*c.mu*ep - (2*c.X-1)*c.chi/a;
++function ep = strainRate(a, P, c)
++% Strain rate from the stress balance, Eq. 8 (c.rho = C*rho*8, see
++% inertialDensity), written as the quadratic  A ep^2 + B ep + C0 = 0  with
++%   A = rho a^2/8 > 0,  B = 3 eta_s > 0,  C0 = P - (2X-1) chi/a.
++% Its roots have product C0/A and sum -B/A < 0. The physical root is
++%   ep = -2 C0/(B + sqrt(B^2 - 4 A C0)),
++% the one that tends to the inertialess -C0/B as A -> 0 (positive while
++% capillarity exceeds the polymer stress, negative if the polymer stress
++% wins, e.g. right after a strong pre-stretch). The other root tends to
++% -B/A -> -infinity and is an artefact of the inertia term. This form avoids
++% round-off when A is small. a and P may be vectors.
++A = c.rho*a.^2/8;
++C0 = P - c.pCap./a;
++disc = c.mu^2*9 - 4*A.*C0;
++if any(disc < 0)
++    error('solveFilamentThinning:noStrainRate', ...
++        ['The stress balance has no real strain rate: the polymer stress ' ...
++        'exceeds the capillary pressure by more than (3 eta_s)^2/(4 A).']);
++end
++ep = -2*C0./(3*c.mu + sqrt(disc));
+ end
+ 
+ function zet = dragRatio(Az, Ar, c)

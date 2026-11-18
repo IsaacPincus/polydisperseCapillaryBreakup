@@ -20,6 +20,7 @@ Run the matching script in `PaperScripts/` (from any folder):
 | `createFig7.m`          | 7a-d         | minutes            |
 | `createFig8.m`          | 8a, 8b       | ~20 min            |
 | `createFig9_Fig10.m`    | 9, 10a, 10b  | minutes            |
+| `createFigB1.m`         | B1 (Appendix B) | seconds         |
 
 Each script is three lines: `results = computeFigN(); plotFigN(results);`.
 The numbers behind a figure are in `results`. Save the current figure with
@@ -121,16 +122,23 @@ bit. The following were then changed so that the code matches the paper:
   sweep), with equal y-limits and dotted tau_Z lines; Fig 10b is new: the
   polymer stress of PS16 and PS7 when the plates stop, divided by V0/a0.
   The plate retraction now stops at the gap where the radius equals a0
-  (L_end = 1.26 mm for a0 = 0.62 mm), not at a fixed 1.3 mm.
+  (L_end = 8.18 mm for a0 = 0.62 mm), not at a fixed 1.3 mm.
+* Plate retraction: the original took the radial velocity of Spiegelberg et
+  al. (1996), Eq. 25, which has 1/Lambda0^2 where continuity requires
+  1/Lambda0. The strain rate (Eq. B10) and radius (Eq. B9) no longer depend
+  on Lambda0 = L0/R0; at the midplane ep = (3/2) (dL/dt)/L and
+  R = R0 H^(-3/4).
+* Inertia: the term is (C/4) rho a^2 ep^2 with C = 144 as in Eq. 8; the
+  original used C rho a^2 ep^2 (4 times larger).
+* The strain rate is now found from the stress balance (Eq. 8) in closed
+  form: it is a quadratic in ep, and the root that tends to the
+  inertialess solution is taken. The original used fzero, which could
+  converge to the other, spurious negative root.
 
-Still to reconcile with the paper:
-
-* Inertia: Eq. 8 has (C/4) rho a^2 ep^2 with C = 144; the code uses
-  C rho a^2 ep^2 (a factor 4 larger), as the original did.
-* Conformation-dependent drag: the code uses Prabhakar's `zetacal`
-  (himodel 2), which agrees with the closed form of Eq. 28 only for long,
-  strongly stretched chains (different P1 normalisation, exact vs
-  logarithmic aspect-ratio correction, and a floor of 1).
+Conformation-dependent drag uses Prabhakar's `zetacal` (himodel 2).
+Eq. 28 is its large-stretch form: the code uses the full aspect-ratio
+correction 1 + ln J(N_t) in place of ln(2 N_t), so that the drag ratio is
+1 at equilibrium, caps N_t at N_K and never lets the ratio fall below 1.
 
 ## Unused functions
 

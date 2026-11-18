@@ -9,7 +9,7 @@ w = r.sweep;
 % --- Fig 8b: mean MW ------------------------------------------------------
 paperFigure();
 weightedLines(r.cPS16, w.meanStressP, w.meanStressAna, w.meanNumber);
-xlabel('$c_\mathrm{PS16}$ [ppm]')
+xlabel('$c_\mathrm{PS16}$ [wppm]')
 ylabel('$M$ [MDa]')
 allM = [w.meanStressP(:); w.meanStressAna(:); w.meanNumber(:)];
 ylim([floor(min(allM)), ceil(max(allM))])
@@ -21,7 +21,7 @@ paperFigure();
 weightedLines(r.cPS16, zimmTime(w.meanStressP), zimmTime(w.meanStressAna), ...
     zimmTime(w.meanNumber));
 plot(r.cPS16, w.tau_EC, 'x', 'Color', [0.5 0.5 0.5], 'DisplayName', '$\tau_\mathrm{EC}$')
-xlabel('$c_\mathrm{PS16}$ [ppm]')
+xlabel('$c_\mathrm{PS16}$ [wppm]')
 ylabel('$\tau_Z(M)$ [s]')
 sweepLegend(r.cPS7);
 
@@ -53,7 +53,7 @@ entries = [repmat({' '}, 1, 2*n), arrayfun(@(c) sprintf('$\\qquad$%d', c), cPS7,
 legend(entries, 'Position', [0.4327 0.29017 0.40472 0.1499], 'NumColumns', 3)
 annotation('textbox', [0.42888 0.43309 0.46 0.066229], 'String', ...
     ['$\sigma_p$ $\quad$ $\sigma_p^\mathrm{terminal}$ $\quad$ $n$' ...
-    ' $\quad$ $c_\mathrm{PS7}$ [ppm]'], ...
+    ' $\quad$ $c_\mathrm{PS7}$ [wppm]'], ...
     'FitBoxToText', 'off', 'BackgroundColor', [1,1,1]);
 end
 

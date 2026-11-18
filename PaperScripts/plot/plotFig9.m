@@ -1,9 +1,10 @@
 function plotFig9(r)
 %PLOTFIG9 tau_EC vs initial radius a0 (Fig 9), on the same y-axis limits
 %   as Fig 10a. Dotted lines mark the Zimm times of PS16 and PS7. The
-%   region Bo > 1 is shaded light grey, with Bo = rho g a0 L/chi and L the
-%   gap at the end of the plate retraction. The a0 for Bo = 1 is printed,
-%   together with the one for Bo = rho g a0^2/chi. The legend is in Fig 10a.
+%   region Bo > 1 is shaded light grey, with Bo = rho g a0^2/chi (Fig 9
+%   caption). The a0 for Bo = 1 is printed, together with the one for
+%   Bo = rho g a0 L/chi with L the gap at the end of the plate retraction.
+%   The legend is in Fig 10a.
 
 tauEcFigure(r, r.radius.a0_vals*1000, r.radius.tau_EC, '$a_0$ [mm]');
 p = defaultParameters();
@@ -12,7 +13,7 @@ a0_BoL = p.chi/(p.rhoFluid*gravity*r.retraction.Lend);   % rho g a0 L/chi = 1
 a0_Bo2 = sqrt(p.chi/(p.rhoFluid*gravity));               % rho g a0^2/chi = 1
 fprintf('Bo = 1 at a0 = %.3g mm (rho g a0 L/chi, L = %.3g mm) and %.3g mm (rho g a0^2/chi)\n', ...
     a0_BoL*1e3, r.retraction.Lend*1e3, a0_Bo2*1e3);
-bondRegion(gca, a0_BoL*1000);
+bondRegion(gca, a0_Bo2*1000);
 lg = legend('Location', 'southeast', 'NumColumns', 2);
 w = 0.4;
 annotation('textbox', [sum(lg.Position([1 3]))-w, sum(lg.Position([2 4]))+0.01, w, 0.07], ...
